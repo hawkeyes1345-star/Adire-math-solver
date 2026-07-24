@@ -22,3 +22,19 @@ Keep it under 100 words. Do not change the answer."""
         messages=[{"role": "user", "content": prompt}],
     )
     return response["message"]["content"]
+
+
+import sympy as sp
+
+
+def check_explanation(explanation, answer):
+    """Guard: the prose must not contradict the verified answer.
+    Returns (ok, reason). A small local model can hallucinate, so we check."""
+    roots = sp.sympify(answer)
+    if not isinstance(roots, (list, tuple)):
+        roots = [roots]
+
+    missing = [str(r) for r in roots if str(r) not in explanation]
+    if missing:
+        return False, f"explanation is missing the root(s): {missing}"
+    return True, "explanation mentions all verified roots"
