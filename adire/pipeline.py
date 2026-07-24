@@ -3,6 +3,7 @@ from adire.solver import solve
 from adire.cache import Cache
 from adire.classify import classify
 from adire.verify import verify_solution
+from adire.steps import build_steps
 
 _cache = Cache()
 
@@ -16,17 +17,19 @@ def solve_problem(latex):
     if hit is not None:
         return {"cached": True, "task": hit["task"], "answer": hit["answer"]}
 
-# MISS — solve it, verify it, then store only if it passes
+# MISS — solve, verify, build steps, then store only if verified
     obj = parse(latex)
     answer = solve(obj, info["task"])
     band = classify(obj, info["task"])
+    ok, reason = verify_solution(obj, info["task"], answer)
 
-    ok, reason = verify_solution(obj, info["task"], answer)   # NEW
+    steps = build_steps(obj, info["task"], answer) if ok else []   # NEW
+
     if ok:
-        _cache.put(key, info["task"], answer, steps=[])       # store only if verified
+        _cache.put(key, info["task"], answer, steps=steps)          # store steps too
     else:
-        answer = None                                          # don't serve unverified
+        answer = None
 
     return {"cached": False, "task": info["task"], "answer": answer,
             "difficulty": band["difficulty"], "score": band["score"],
-            "verified": ok, "reason": reason}                 # NEW
+            "verified": ok, "steps": steps}                          # NEW
