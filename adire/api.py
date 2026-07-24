@@ -23,7 +23,6 @@ class Problem(BaseModel):
 def health():
     return {"status": "ok"}
 
-
 @app.post("/solve")
 def solve(body: Problem):
     return solve_problem(body.latex)

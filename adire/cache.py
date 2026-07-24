@@ -4,7 +4,7 @@ import sqlite3
 
 class Cache:
     def __init__(self, path="adire.db"):
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS solutions (
                 key          TEXT PRIMARY KEY,
