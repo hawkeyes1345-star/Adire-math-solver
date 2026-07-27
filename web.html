@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adire</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.101.0/dist/mathlive.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto;
+         padding: 0 20px; color: #1a1a2e; background: #f4f4f8; }
+  h1 { color: #2f3d9e; margin-bottom: 4px; }
+  .sub { color: #777; margin-top: 0; font-size: 14px; }
+  math-field { width: 100%; font-size: 24px; padding: 12px; background: #fff;
+               border: 2px solid #ccc; border-radius: 8px; }
+  button { font-size: 16px; font-weight: 600; padding: 10px 24px; margin-top: 12px;
+           background: #2f3d9e; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  button:hover { background: #1f2d7e; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 6px; color: #fff;
+           font-size: 13px; font-weight: 600; text-transform: uppercase; }
+  .easy { background: #1c6e52; } .medium { background: #2f3d9e; } .hard { background: #a9541a; }
+  .answer { background: #fff; border-left: 5px solid #2f3d9e; padding: 14px 18px;
+            margin: 16px 0; border-radius: 4px; }
+  .step { background: #fff; border: 1px solid #e0e0e8; border-radius: 8px;
+          padding: 14px 18px; margin: 10px 0; }
+  .step-title { font-weight: 600; color: #2f3d9e; margin-bottom: 8px; }
+  .explanation { background: #eef; padding: 14px 18px; border-radius: 8px; margin-top: 16px;
+                 line-height: 1.6; }
+  .meta { color: #777; font-size: 13px; margin-top: 6px; }
+</style>
+</head>
+<body>
+  <h1>Adire</h1>
+  <p class="sub">Step-by-step maths solver</p>
+
+  <math-field id="input">x^2-5x+6=0</math-field>
+  <br>
+  <button id="solve">Solve</button>
+  <span id="status" class="meta"></span>
+
+  <div id="output"></div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+function renderMath(el, latex) {
+  try { katex.render(latex, el, { throwOnError: false, displayMode: true }); }
+  catch { el.textContent = latex; }
+}
+
+document.getElementById("solve").onclick = async () => {
+  const latex = document.getElementById("input").value;
+  const status = document.getElementById("status");
+  const out = document.getElementById("output");
+  out.innerHTML = "";
+  status.textContent = "Solving… (the local model takes a few seconds)";
+
+  let data;
+  try {
+    const res = await fetch(API + "/solve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ latex })
+    });
+    data = await res.json();
+  } catch (e) {
+    status.textContent = "Could not reach the server. Is it running?";
+    return;
+  }
+  status.textContent = "";
+
+  // difficulty + answer
+  let html = `<p><span class="badge ${data.difficulty}">${data.difficulty}</span>
+              <span class="meta">verified: ${data.verified} · ${data.cached ? "from cache" : "freshly solved"}</span></p>`;
+  html += `<div class="answer"><strong>Answer:</strong> <span id="ans"></span></div>`;
+  html += `<div id="steps"></div>`;
+  if (data.explanation) html += `<div class="explanation">${data.explanation}</div>`;
+  out.innerHTML = html;
+
+  renderMath(document.getElementById("ans"), data.answer_latex || data.answer);
+
+  const stepsDiv = document.getElementById("steps");
+  (data.steps || []).forEach(s => {
+    const div = document.createElement("div");
+    div.className = "step";
+    div.innerHTML = `<div class="step-title">${s.title}</div><div class="math"></div>`;
+    stepsDiv.appendChild(div);
+    renderMath(div.querySelector(".math"), s.math);
+  });
+};
+</script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+
+
 from adire.normalize import parse, detect_task, canonical, make_key
 from adire.solver import solve
 from adire.cache import Cache
@@ -5,6 +7,7 @@ from adire.classify import classify
 from adire.verify import verify_solution
 from adire.steps import build_steps
 from adire.llm import explain, check_explanation
+
 _cache = Cache()
 
 
@@ -15,8 +18,11 @@ def solve_problem(latex):
 
     hit = _cache.get(key)
     if hit is not None:
-        return {"cached": True, "task": hit["task"], "answer": hit["answer"]}
-# MISS — solve, verify, build steps
+        return {"cached": True, "task": hit["task"], "answer": hit["answer"],
+                "difficulty": "cached", "score": None, "verified": True,
+                "steps": hit["steps"], "explanation": None}
+
+    # MISS — solve, verify, build steps
     obj = parse(latex)
     answer = solve(obj, info["task"])
     band = classify(obj, info["task"])
