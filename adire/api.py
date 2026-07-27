@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi import UploadFile, File
+from adire.ocr import image_to_latex
+import shutil, tempfile, os
 
 from adire.pipeline import solve_problem
 
@@ -26,3 +29,16 @@ def health():
 @app.post("/solve")
 def solve(body: Problem):
     return solve_problem(body.latex)
+
+@app.post("/ocr")
+async def ocr(file: UploadFile = File(...)):
+    # save the uploaded image to a temp file, OCR it, delete it
+    suffix = os.path.splitext(file.filename)[1] or ".png"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        tmp_path = tmp.name
+    try:
+        result = image_to_latex(tmp_path)
+    finally:
+        os.remove(tmp_path)
+    return result

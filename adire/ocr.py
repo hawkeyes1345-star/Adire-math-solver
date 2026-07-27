@@ -7,9 +7,14 @@ OCR_MODELS = os.getenv("ADIRE_OCR_MODELS", "minicpm-v,llama3.2-vision").split(",
 
 PROMPT = """Transcribe the mathematics in this image to a single LaTeX expression.
 Output ONLY the LaTeX, nothing else. No dollar signs, no explanation, no markdown.
-Keep the operation: if it shows an integral, use \\int; a derivative, use \\frac{d}{dx}.
-If nothing mathematical is legible, output exactly: UNREADABLE"""
 
+Be precise about operators:
+- A short horizontal line between terms is a MINUS sign (-), not multiplication.
+- Only use \\cdot or * if there is a clear dot or times symbol.
+- Preserve exponents: a small raised number is a power, e.g. x^{2}.
+- Keep the operation: integral \\int, derivative \\frac{d}{dx}, equals =.
+
+If nothing mathematical is legible, output exactly: UNREADABLE"""
 
 def _clean(text):
     """Tidy the raw model output into parseable LaTeX."""

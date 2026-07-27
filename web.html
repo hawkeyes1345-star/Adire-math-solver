@@ -34,9 +34,12 @@
   <h1>Adire</h1>
   <p class="sub">Step-by-step maths solver</p>
 
-  <math-field id="input">x^2-5x+6=0</math-field>
+<math-field id="input">x^2-5x+6=0</math-field>
   <br>
   <button id="solve">Solve</button>
+  <button id="upload">📷 Upload photo</button>
+  <input type="file" id="file" accept="image/*" style="display:none">
+  <span id="ocrstatus" class="meta"></span>
   <span id="status" class="meta"></span>
 
   <div id="output"></div>
@@ -88,6 +91,28 @@ document.getElementById("solve").onclick = async () => {
     stepsDiv.appendChild(div);
     renderMath(div.querySelector(".math"), s.math);
   });
+};
+document.getElementById("upload").onclick = () => document.getElementById("file").click();
+
+document.getElementById("file").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const status = document.getElementById("ocrstatus");
+  status.textContent = "Reading image… (~30s)";
+  const form = new FormData();
+  form.append("file", f);
+  try {
+    const res = await fetch(API + "/ocr", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.ok && data.latex) {
+      document.getElementById("input").value = data.latex;
+      status.textContent = "Read it — check it's correct, then Solve.";
+    } else {
+      status.textContent = "Couldn't read that image. Try a clearer photo.";
+    }
+  } catch {
+    status.textContent = "OCR failed. Is the server running?";
+  }
 };
 </script>
 </body>
