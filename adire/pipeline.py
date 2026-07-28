@@ -1,5 +1,3 @@
-
-
 from adire.normalize import parse, detect_task, canonical, make_key
 from adire.solver import solve
 from adire.cache import Cache
@@ -12,15 +10,16 @@ _cache = Cache()
 
 
 def solve_problem(latex):
-    """normalize -> check cache -> hit serves free, miss solves then stores."""
+    """normalize -> tier1 cache -> solve -> verify -> tier2 example -> store."""
     info = make_key(latex)
     key = info["key"]
 
+    # TIER 1: exact match
     hit = _cache.get(key)
     if hit is not None:
         return {"cached": True, "task": hit["task"], "answer": hit["answer"],
                 "difficulty": "cached", "score": None, "verified": True,
-                "steps": hit["steps"], "explanation": None}
+                "steps": hit["steps"], "explanation": None, "similar_used": None}
 
     # MISS — solve, verify, build steps
     obj = parse(latex)
@@ -29,6 +28,9 @@ def solve_problem(latex):
     ok, reason = verify_solution(obj, info["task"], answer)
 
     steps = build_steps(obj, info["task"], answer) if ok else []
+
+    # TIER 2: find a similar past problem (as an example, not the answer)
+    similar = _cache.find_similar(latex, info["task"]) if ok else None
 
     explanation = None
     if ok:
@@ -40,10 +42,11 @@ def solve_problem(latex):
             explanation = None
 
     if ok:
-        _cache.put(key, info["task"], answer, steps=steps)
+        _cache.put(key, info["task"], answer, steps=steps, latex=latex)
     else:
         answer = None
 
     return {"cached": False, "task": info["task"], "answer": answer,
             "difficulty": band["difficulty"], "score": band["score"],
-            "verified": ok, "steps": steps, "explanation": explanation}
+            "verified": ok, "steps": steps, "explanation": explanation,
+            "similar_used": similar["latex"] if similar else None}
