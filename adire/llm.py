@@ -56,3 +56,42 @@ def check_explanation(explanation, answer):
     if missing:
         return False, f"explanation is missing the root(s): {missing}"
     return True, "explanation mentions all verified roots"
+
+def explain_stream(problem_latex, answer, steps, similar=None):
+    """Same as explain(), but yields text chunks as they generate."""
+    step_lines = "\n".join(f"  {s['title']}: {s['math']}" for s in steps)
+
+    notes = retrieve(problem_latex)
+    notes_text = "\n".join(notes) if notes else "No specific course notes available."
+
+    example_text = ""
+    if similar:
+        ex_steps = "\n".join(f"  {s['title']}: {s['math']}" for s in similar["steps"])
+        example_text = f"""
+Here is a SIMILAR problem solved before, as a style reference
+(do NOT copy its numbers):
+Problem: {similar['latex']}
+Steps:
+{ex_steps}
+"""
+
+    prompt = f"""A student asked to solve this problem: {problem_latex}
+The verified answer is: {answer}
+
+Relevant course notes (use this notation and method where possible):
+{notes_text}
+{example_text}
+The solution steps are:
+{step_lines}
+
+Write a short, friendly explanation of how to reach the answer.
+Explain in plain language a student can follow. Keep it under 100 words.
+Do not change the answer."""
+
+    stream = ollama.chat(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        stream=True,
+    )
+    for chunk in stream:
+        yield chunk["message"]["content"]

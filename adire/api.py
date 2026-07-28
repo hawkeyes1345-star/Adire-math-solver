@@ -4,7 +4,11 @@ from pydantic import BaseModel
 from fastapi import UploadFile, File
 from adire.ocr import image_to_latex
 import shutil, tempfile, os
-
+from fastapi.responses import StreamingResponse
+from adire.normalize import parse, make_key
+from adire.solver import solve
+from adire.steps import build_steps
+from adire.llm import explain_stream
 from adire.pipeline import solve_problem
 
 app = FastAPI(title="Adire")
@@ -42,3 +46,17 @@ async def ocr(file: UploadFile = File(...)):
     finally:
         os.remove(tmp_path)
     return result
+
+@app.post("/explain_stream")
+def explain_stream_endpoint(body: Problem):
+    """Stream the explanation token-by-token."""
+    info = make_key(body.latex)
+    obj = parse(body.latex)
+    answer = solve(obj, info["task"])
+    steps = build_steps(obj, info["task"], answer)
+
+    def generate():
+        for chunk in explain_stream(body.latex, answer, steps):
+            yield chunk
+
+    return StreamingResponse(generate(), media_type="text/plain")
