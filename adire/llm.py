@@ -1,19 +1,29 @@
 import ollama
+import sympy as sp
+from adire.rag import retrieve
 
 MODEL = "qwen2.5:7b"
 
 
 def explain(problem_latex, answer, steps):
-    """Ask the local model to write a friendly explanation of the solution.
-    The maths is already solved and verified — the model only writes prose."""
+    """Ask the local model to explain the solution, using retrieved course notes."""
     step_lines = "\n".join(f"  {s['title']}: {s['math']}" for s in steps)
+
+    # RAG: pull relevant course notes for this problem
+    notes = retrieve(problem_latex)
+    notes_text = "\n".join(notes) if notes else "No specific course notes available."
 
     prompt = f"""A student asked to solve this problem: {problem_latex}
 The verified answer is: {answer}
+
+Relevant course notes (use this notation and method where possible):
+{notes_text}
+
 The solution steps are:
 {step_lines}
 
 Write a short, friendly explanation of how to reach the answer.
+Follow the method shown in the course notes above.
 Explain the reasoning in plain language a student can follow.
 Keep it under 100 words. Do not change the answer."""
 
@@ -24,12 +34,8 @@ Keep it under 100 words. Do not change the answer."""
     return response["message"]["content"]
 
 
-import sympy as sp
-
-
 def check_explanation(explanation, answer):
-    """Guard: the prose must not contradict the verified answer.
-    Returns (ok, reason). A small local model can hallucinate, so we check."""
+    """Guard: the prose must not contradict the verified answer."""
     roots = sp.sympify(answer)
     if not isinstance(roots, (list, tuple)):
         roots = [roots]
