@@ -1,0 +1,18 @@
+QUADRATIC EQUATIONS
+
+To solve a quadratic equation of the form ax^2 + bx + c = 0:
+First, try to factor it into (x - p)(x - q) = 0, where p and q are the roots.
+The roots are found by setting each factor to zero.
+If factoring is difficult, use the quadratic formula: x = (-b ± sqrt(b^2 - 4ac)) / (2a).
+The discriminant D = b^2 - 4ac tells you the nature of the roots.
+
+INTEGRATION
+
+To integrate a polynomial, apply the power rule to each term:
+The integral of x^n is x^(n+1)/(n+1), for n not equal to -1.
+Always add the constant of integration C for indefinite integrals.
+
+DIFFERENTIATION
+
+The power rule for derivatives: the derivative of x^n is n*x^(n-1).
+For products, use the product rule: (fg)' = f'g + fg'.
