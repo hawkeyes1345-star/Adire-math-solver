@@ -13,10 +13,8 @@ TASK_WEIGHT = {
 def features(obj, task):
     """Read complexity signals off the parsed problem."""
     core = obj.lhs - obj.rhs if isinstance(obj, Eq) else obj
-
     ops = int(sp.count_ops(core))          # number of operations
     n_symbols = len(core.free_symbols)     # how many variables
-
     degree = 0                             # highest power
     for s in core.free_symbols:
         try:
@@ -25,13 +23,13 @@ def features(obj, task):
                 degree = max(degree, int(d))
         except Exception:
             pass
-
     return {
         "task_weight": TASK_WEIGHT.get(task, 1.0),
         "ops": ops,
         "degree": degree,
         "n_symbols": n_symbols,
     }
+
 
 def score(f):
     """Combine features into one number. Higher = harder."""
@@ -45,6 +43,12 @@ def score(f):
 
 def classify(obj, task):
     """Return the difficulty band and the score behind it."""
+    # New task types have inherent difficulty (not a single-expression score)
+    if task in ("system", "matrix"):
+        return {"difficulty": "hard", "score": None}
+    if task == "limit":
+        return {"difficulty": "medium", "score": None}
+
     f = features(obj, task)
     s = score(f)
     if s < 4.0:
