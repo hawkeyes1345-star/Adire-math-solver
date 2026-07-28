@@ -5,7 +5,7 @@ from sympy import Eq
 TASK_WEIGHT = {
     "simplify": 0.5,
     "solve": 1.0,
-    "differentiate": 1.5,
+    "differentiate": 2.0,
     "integrate": 3.0,
 }
 
@@ -38,7 +38,7 @@ def score(f):
     return (
         2.0 * f["task_weight"]
         + 0.25 * f["ops"]
-        + 0.9 * max(0, f["degree"] - 1)     # degree 1 is free; 2+ adds up
+        + 1.5 * max(0, f["degree"] - 1)     # degree 1 is free; 2+ adds up
         + 0.8 * max(0, f["n_symbols"] - 1)  # 1 variable is free; 2+ adds up
     )
 
